@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>RARE KRAFT • Handmade Store</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;background:#fff8f0;color:#222;}
+    header{background:#ff6f61;padding:16px;color:#fff;font-weight:bold;display:flex;justify-content:space-between;align-items:center;}
+    #products{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;padding:20px;max-width:1200px;margin:auto;}
+    .product{background:#fff;border:1px solid #eee;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.08);overflow:hidden;display:flex;flex-direction:column;}
+    .product img{width:100%;height:180px;object-fit:cover;}
+    .product-details{padding:12px;flex:1;display:flex;flex-direction:column;justify-content:space-between;}
+    .product-details h3{margin:0 0 8px;font-size:16px;}
+    .price{font-weight:bold;color:#ff6f61;}
+    .cart-btn{background:#ff6f61;color:#fff;border:none;padding:8px;border-radius:6px;cursor:pointer;margin-top:8px;}
+    .cart-btn:hover{background:#e85b50;}
+
+    /* Cart drawer */
+    #cartDrawer{position:fixed;top:0;right:-400px;width:360px;height:100%;background:#fff;box-shadow:-4px 0 10px rgba(0,0,0,.2);transition:0.3s;padding:20px;overflow-y:auto;z-index:1000;}
+    #cartDrawer.open{right:0;}
+    #cartDrawer h2{margin-top:0;}
+    .cart-item{display:flex;align-items:center;margin-bottom:12px;border-bottom:1px solid #eee;padding-bottom:8px;}
+    .cart-item img{width:50px;height:50px;object-fit:cover;margin-right:10px;border-radius:4px;}
+    .cart-item div{flex:1;}
+    .cart-item button{background:none;border:none;color:#ff6f61;cursor:pointer;}
+    #cartTotals{margin-top:20px;font-weight:bold;}
+    #cartToggle{background:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;}
+    .badge{background:#fff;color:#ff6f61;padding:4px 8px;border-radius:999px;border:1px solid rgba(0,0,0,0.06);}
+
+    @media (max-width:720px){
+      #cartDrawer{width:100%;}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span>RARE KRAFT — Handmade Goods</span>
+    <button id="cartToggle" class="badge">🛒 Cart (0)</button>
+  </header>
+  <main id="products"></main>
+
+  <aside id="cartDrawer">
+    <h2>Your Cart</h2>
+    <div id="cartItems"></div>
+    <div id="cartTotals"></div>
+    <div style="margin-top:12px">
+      <button id="checkoutBtn" class="cart-btn" style="width:100%">Checkout (Simulated)</button>
+    </div>
+  </aside>
+
+  <script>
+  const NAMED_PRODUCTS = [
+    {name:'Terracotta Planter', cat:'Decor', q:'terracotta planter pottery plant pot'},
+    {name:'Madhubani Painting Print', cat:'Decor', q:'madhubani painting folk art india'},
+    {name:'Block-Printed Tablecloth', cat:'Kitchen', q:'block print tablecloth textile'},
+    {name:'Brass Diyas Set (6)', cat:'Gifts', q:'brass diya lamp festival india'},
+    {name:'Jute Storage Basket', cat:'Decor', q:'jute basket storage natural fiber'},
+    {name:'Macramé Wall Hanging', cat:'Decor', q:'macrame wall hanging boho'},
+    {name:'Handloom Cotton Scarf', cat:'Accessories', q:'handloom cotton scarf'},
+    {name:'Copper Water Bottle', cat:'Kitchen', q:'copper water bottle hammered copper'},
+    {name:'Wooden Spice Box', cat:'Kitchen', q:'wooden spice box masala dabba'},
+    {name:'Ceramic Tea Cup Set', cat:'Kitchen', q:'ceramic tea cup set handmade'},
+    {name:'Bamboo Serving Tray', cat:'Kitchen', q:'bamboo serving tray'},
+    {name:'Cane Laundry Basket', cat:'Decor', q:'cane rattan laundry basket'},
+    {name:'Wool Felt Coasters (4)', cat:'Kitchen', q:'wool felt coasters handmade'},
+    {name:'Soy Wax Scented Candle', cat:'Gifts', q:'soy wax candle handmade'},
+    {name:'Leather Travel Journal', cat:'Gifts', q:'leather travel journal handmade'},
+    {name:'Clay Kulhad Cups (6)', cat:'Kitchen', q:'kulhad clay cups chai'},
+    {name:'Handmade Dreamcatcher', cat:'Decor', q:'handmade dreamcatcher boho'},
+    {name:'Silk Embroidered Cushion Cover', cat:'Decor', q:'silk embroidered cushion cover'},
+    {name:'Khadi Notebook', cat:'Gifts', q:'khadi paper notebook handmade'},
+    {name:'Agarbatti Holder', cat:'Decor', q:'incense holder ceramic minimal'},
+    {name:'Rattan Wall Mirror', cat:'Decor', q:'rattan wall mirror round'},
+    {name:'Terracotta Aroma Diffuser', cat:'Gifts', q:'terracotta essential oil diffuser'},
+    {name:'Stoneware Dinner Plate', cat:'Kitchen', q:'stoneware dinner plate handmade ceramic'},
+    {name:'Wooden Chopping Board', cat:'Kitchen', q:'wooden chopping board acacia'},
+    {name:'Brass Mortar & Pestle', cat:'Kitchen', q:'brass mortar pestle spice'},
+    {name:'Hand-painted Fridge Magnets (3)', cat:'Gifts', q:'hand painted fridge magnet craft'},
+    {name:'Cork Yoga Block', cat:'Gifts', q:'cork yoga block eco friendly'},
+    {name:'Block-Print Tote Bag', cat:'Accessories', q:'block print tote bag cotton'},
+    {name:'Coconut Shell Bowl', cat:'Kitchen', q:'coconut shell bowl handmade'},
+    {name:'Linen Kitchen Apron', cat:'Kitchen', q:'linen kitchen apron minimal'},
+    {name:'Neem Wood Comb', cat:'Accessories', q:'neem wood comb wooden comb'},
+    {name:'Clay Diyas (12)', cat:'Gifts', q:'clay diya lamp diwali'},
+    {name:'Bamboo Toothbrush (2)', cat:'Accessories', q:'bamboo toothbrush eco'},
+    {name:'Macramé Plant Hanger', cat:'Decor', q:'macrame plant hanger'},
+    {name:'Handwoven Table Runner', cat:'Decor', q:'handwoven table runner cotton'},
+    {name:'Kantha Quilt', cat:'Decor', q:'kantha quilt hand stitched'},
+    {name:'Copper Moscow Mule Mug', cat:'Kitchen', q:'copper mug hammered'},
+    {name:'Terracotta Water Dispenser', cat:'Kitchen', q:'terracotta water dispenser matka'},
+    {name:'Wicker Picnic Basket', cat:'Gifts', q:'wicker picnic basket rattan'},
+    {name:'Jute Rug (3x5 ft)', cat:'Decor', q:'jute rug natural fiber'},
+    {name:'Ceramic Incense Burner', cat:'Decor', q:'ceramic incense burner minimal'},
+    {name:'Wooden Rolling Pin (Belan)', cat:'Kitchen', q:'wooden rolling pin kitchen'},
+    {name:'Brass Hand Bell', cat:'Decor', q:'brass hand bell vintage'},
+    {name:'Woolen Beanie', cat:'Accessories', q:'wool beanie handmade knit'},
+    {name:'Beaded Anklet', cat:'Accessories', q:'beaded anklet handmade jewelry'},
+    {name:'Shell Wind Chime', cat:'Decor', q:'seashell wind chime handmade'},
+    {name:'Clay Pen Stand', cat:'Gifts', q:'clay pen holder handmade'},
+    {name:'Handmade Soap Bar', cat:'Gifts', q:'handmade soap bar natural'},
+    {name:'Terracotta Money Bank', cat:'Gifts', q:'terracotta piggy bank money box'},
+    {name:'Palm Leaf Basket', cat:'Decor', q:'palm leaf basket handmade'}
+  ];
+
+  // Build PRODUCTS safely (compute price/mrp without `this`)
+  const PRODUCTS = NAMED_PRODUCTS.map((p,i)=>{
+    const price = Math.floor(350 + Math.random()*2200);
+    const mrp = Math.max(price + 150, Math.floor(650 + Math.random()*2600));
+    return {
+      id: "p"+(i+1),
+      name: p.name,
+      cat: p.cat,
+      price,
+      mrp,
+      // Local images approach: change to 'images/<slug>.jpg' if you downloaded images.
+      // By default we use Unsplash Source so it shows meaningful pics automatically.
+      image: `https://source.unsplash.com/600x400/?${encodeURIComponent(p.q)}&sig=${i+3}`
+    };
+  });
+
+  // Persist cart in localStorage
+  const CART_KEY = 'handycraft_cart_v1';
+  function loadCart(){ try{ cart = JSON.parse(localStorage.getItem(CART_KEY)) || {}; }catch(e){ cart = {}; } }
+  function saveCart(){ localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
+
+  loadCart();
+
+  function renderGrid(){
+    const container=document.getElementById("products");
+    container.innerHTML="";
+    PRODUCTS.forEach(p=>{
+      const card=document.createElement("div");
+      card.className="product";
+      card.innerHTML=`
+        <img src="${p.image}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/600x400?text=No+Image'">
+        <div class="product-details">
+          <div>
+            <h3>${p.name}</h3>
+            <p style="margin:6px 0"><span class="price">₹${p.price}</span> <span style="text-decoration:line-through;color:#777;margin-left:8px">₹${p.mrp}</span></p>
+            <p class="small">${p.cat}</p>
+          </div>
+          <div>
+            <button class="cart-btn" onclick="addToCart('${p.id}')">Add to Cart</button>
+          </div>
+        </div>`;
+      container.appendChild(card);
+    });
+  }
+
+  function addToCart(id){
+    const product = PRODUCTS.find(x=>x.id===id);
+    if(!product) return;
+    if(!cart[id]) cart[id] = {...product, qty:0};
+    cart[id].qty++;
+    saveCart();
+    renderCart();
+    showToast(`${product.name} added to cart`);
+  }
+
+  function removeFromCart(id){
+    delete cart[id];
+    saveCart();
+    renderCart();
+  }
+
+  function changeQty(id, delta){
+    if(!cart[id]) return;
+    cart[id].qty += delta;
+    if(cart[id].qty <= 0) delete cart[id];
+    saveCart();
+    renderCart();
+  }
+
+  function renderCart(){
+    const cartItems=document.getElementById("cartItems");
+    cartItems.innerHTML = '';
+    let total=0, mrpTotal=0, count=0;
+    Object.values(cart).forEach(item=>{
+      total += item.price * item.qty;
+      mrpTotal += item.mrp * item.qty;
+      count += item.qty;
+      const div = document.createElement('div');
+      div.className = 'cart-item';
+      div.innerHTML = `
+        <img src="${item.image}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/64?text=?'">
+        <div>
+          <strong>${item.name}</strong><br>
+          <span class="small">₹${item.price} × ${item.qty}</span>
+        </div>
+        <div style="text-align:right">
+          <div style="margin-bottom:8px">₹${item.price*item.qty}</div>
+          <div>
+            <button onclick="changeQty('${item.id}',-1)" class="cart-btn" style="padding:4px 8px;background:#fff;color:#ff6f61;border:1px solid #ff6f61;border-radius:6px;margin-right:6px">−</button>
+            <button onclick="changeQty('${item.id}',1)" class="cart-btn" style="padding:4px 8px">+</button>
+          </div>
+          <div><button onclick="removeFromCart('${item.id}')" style="background:none;border:none;color:#999;margin-top:6px">Remove</button></div>
+        </div>`;
+      cartItems.appendChild(div);
+    });
+    const savings = mrpTotal - total;
+    document.getElementById("cartTotals").innerHTML = `
+      <div id="cartTotalsInner">
+        <p>Subtotal: ₹${total}</p>
+        <p>MRP Total: ₹${mrpTotal}</p>
+        <p style="color:green">You Save: ₹${savings}</p>
+      </div>`;
+    document.getElementById("cartToggle").innerText = `🛒 Cart (${count})`;
+  }
+
+  // Drawer toggle
+  document.getElementById('cartToggle').addEventListener('click', ()=>{
+    document.getElementById('cartDrawer').classList.toggle('open');
+  });
+
+  document.getElementById('checkoutBtn').addEventListener('click', ()=>{
+    if(Object.keys(cart).length === 0){ alert('Cart is empty'); return; }
+    alert('Checkout simulated — thank you!');
+    cart = {};
+    saveCart();
+    renderCart();
+    document.getElementById('cartDrawer').classList.remove('open');
+  });
+
+  function showToast(msg){
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.position='fixed'; t.style.left='50%'; t.style.bottom='20px';
+    t.style.transform='translateX(-50%)'; t.style.background='#111'; t.style.color='#fff';
+    t.style.padding='8px 12px'; t.style.borderRadius='8px'; t.style.zIndex=9999;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),1400);
+  }
+
+  // Quick console tests
+  function runQuickTests(){
+    console.log('Quick tests: PRODUCTS length =', PRODUCTS.length);
+    if(PRODUCTS.length !==50) console.warn('Expected 50 products');
+    PRODUCTS.forEach((p,i)=>{
+      if(!p.id) console.error('Product missing id', i);
+      if(!p.name) console.error('Product missing name', i);
+      if(!p.image) console.error('Product missing image', i);
+      if(typeof p.price !== 'number') console.error('Product price not number', i);
+      if(typeof p.mrp !== 'number') console.error('Product mrp not number', i);
+    });
+    console.log('Sample images:' , PRODUCTS.slice(0,5).map(p=>p.image));
+  }
+
+  // init
+  renderGrid();
+  renderCart();
+  runQuickTests();
+  </script>
+</body>
+</html>
